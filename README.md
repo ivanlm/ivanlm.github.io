@@ -1,6 +1,6 @@
 # ivanlm.github.io
 
-Site pessoal, publicado via GitHub Pages em https://ivanlm.github.io/
+Personal site, published with GitHub Pages at https://ivanlm.github.io/
 
-Serve também as páginas públicas exigidas pelo Google para clientes OAuth de
-uso pessoal: a página inicial e a [política de privacidade](privacy.html).
+Also serves the public pages Google requires for personal OAuth clients:
+the home page and the [privacy policy](privacy.html).
