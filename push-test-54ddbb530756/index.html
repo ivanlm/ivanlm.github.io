@@ -43,7 +43,7 @@
   }
   textarea {
     width: 100%;
-    height: 140px;
+    height: 320px;
     box-sizing: border-box;
     font-size: 11px;
     background: #101018;
@@ -65,6 +65,7 @@
 
   <button id="btn-subscribe">Ativar e assinar notificações</button>
   <button id="btn-copy" disabled>Copiar subscription (JSON)</button>
+  <button id="btn-share" disabled>Compartilhar / AirDrop pro Mac</button>
 
   <div id="status">Aguardando...</div>
   <textarea id="output" readonly placeholder="A subscription aparece aqui depois de assinar."></textarea>
@@ -76,6 +77,7 @@
   const outputEl = document.getElementById("output");
   const btnSubscribe = document.getElementById("btn-subscribe");
   const btnCopy = document.getElementById("btn-copy");
+  const btnShare = document.getElementById("btn-share");
   const installWarning = document.getElementById("install-warning");
 
   function log(msg) {
@@ -122,9 +124,19 @@
       const json = JSON.stringify(sub.toJSON(), null, 2);
       outputEl.value = json;
       btnCopy.disabled = false;
-      log("Assinado! Copie o JSON abaixo e mande pro Mac.");
+      btnShare.disabled = !navigator.share;
+      log("Assinado! Use Compartilhar (AirDrop) ou Copiar para levar pro Mac.");
     } catch (err) {
       log("Erro: " + err);
+    }
+  });
+
+  btnShare.addEventListener("click", async () => {
+    try {
+      await navigator.share({ title: "Push subscription", text: outputEl.value });
+      log("Compartilhado.");
+    } catch (err) {
+      log("Share cancelado ou indisponível: " + err);
     }
   });
 
