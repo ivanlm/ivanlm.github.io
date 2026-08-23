@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<title>Push Test</title>
+<link rel="manifest" href="manifest.json" />
+<link rel="apple-touch-icon" href="icon-192.png" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+<meta name="theme-color" content="#1e1e28" />
+<style>
+  body {
+    font-family: -apple-system, system-ui, sans-serif;
+    background: #1e1e28;
+    color: #eee;
+    margin: 0;
+    padding: 24px 20px 60px;
+  }
+  h1 { font-size: 20px; }
+  p { line-height: 1.5; color: #bbb; }
+  button {
+    display: block;
+    width: 100%;
+    padding: 14px;
+    margin: 12px 0;
+    font-size: 16px;
+    border: none;
+    border-radius: 10px;
+    background: #ff9500;
+    color: #1e1e28;
+    font-weight: 600;
+  }
+  button:disabled { opacity: 0.4; }
+  #status {
+    white-space: pre-wrap;
+    background: #101018;
+    border-radius: 10px;
+    padding: 12px;
+    font-size: 13px;
+    color: #8f8;
+    min-height: 20px;
+  }
+  textarea {
+    width: 100%;
+    height: 140px;
+    box-sizing: border-box;
+    font-size: 11px;
+    background: #101018;
+    color: #ccc;
+    border: 1px solid #444;
+    border-radius: 8px;
+    padding: 8px;
+  }
+  .warn { color: #ffb347; }
+</style>
+</head>
+<body>
+  <h1>Push Test</h1>
+  <p>Página de teste pessoal de Web Push (PWA). Não é indexada em nenhum lugar; a URL não é secreta de verdade, só não-óbvia.</p>
+
+  <div id="install-warning" class="warn" style="display:none">
+    ⚠️ Abra esta página pelo ícone na Tela de Início (Compartilhar → Adicionar à Tela de Início), não direto pelo Safari — a API de push só funciona no app instalado.
+  </div>
+
+  <button id="btn-subscribe">Ativar e assinar notificações</button>
+  <button id="btn-copy" disabled>Copiar subscription (JSON)</button>
+
+  <div id="status">Aguardando...</div>
+  <textarea id="output" readonly placeholder="A subscription aparece aqui depois de assinar."></textarea>
+
+<script>
+  const VAPID_PUBLIC_KEY = "BOnlrCepSGpinb1DmxJea_-g7po0LeXlrTJELI2CjvEZTDmSHzrztrQ2svbwcdzNnwemOzv6xdrxp_T3TroO85E";
+
+  const statusEl = document.getElementById("status");
+  const outputEl = document.getElementById("output");
+  const btnSubscribe = document.getElementById("btn-subscribe");
+  const btnCopy = document.getElementById("btn-copy");
+  const installWarning = document.getElementById("install-warning");
+
+  function log(msg) {
+    statusEl.textContent = msg;
+  }
+
+  function urlBase64ToUint8Array(base64String) {
+    const padding = "=".repeat((4 - (base64String.length % 4)) % 4);
+    const base64 = (base64String + padding).replace(/-/g, "+").replace(/_/g, "/");
+    const rawData = atob(base64);
+    return Uint8Array.from([...rawData].map((c) => c.charCodeAt(0)));
+  }
+
+  const isStandalone =
+    window.matchMedia("(display-mode: standalone)").matches ||
+    window.navigator.standalone === true;
+
+  if (!isStandalone) {
+    installWarning.style.display = "block";
+  }
+
+  if (!("serviceWorker" in navigator) || !("PushManager" in window)) {
+    log("Este navegador não suporta Push API (ou você não abriu pelo app instalado).");
+    btnSubscribe.disabled = true;
+  }
+
+  navigator.serviceWorker
+    .register("sw.js")
+    .then((reg) => log("Service worker registrado. Toque no botão para assinar."))
+    .catch((err) => log("Erro registrando service worker: " + err));
+
+  btnSubscribe.addEventListener("click", async () => {
+    try {
+      const perm = await Notification.requestPermission();
+      log("Permissão: " + perm);
+      if (perm !== "granted") return;
+
+      const reg = await navigator.serviceWorker.ready;
+      const sub = await reg.pushManager.subscribe({
+        userVisibleOnly: true,
+        applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY),
+      });
+
+      const json = JSON.stringify(sub.toJSON(), null, 2);
+      outputEl.value = json;
+      btnCopy.disabled = false;
+      log("Assinado! Copie o JSON abaixo e mande pro Mac.");
+    } catch (err) {
+      log("Erro: " + err);
+    }
+  });
+
+  btnCopy.addEventListener("click", async () => {
+    try {
+      await navigator.clipboard.writeText(outputEl.value);
+      log("Copiado pra área de transferência.");
+    } catch (err) {
+      outputEl.select();
+      log("Não deu pra copiar automático — selecionei o texto, copie manualmente.");
+    }
+  });
+</script>
+</body>
+</html>
